@@ -1,0 +1,26 @@
+#  Buscar todas as listas pelo grupo
+  select_lists_by_group_id: >
+   SELECT * FROM vw_lists WHERE group_id = $1;
+
+  #  Buscar todas as listas pelo usuario
+  select_lists_by_user_id: >
+   SELECT * FROM vw_lists WHERE created_by = $1;
+
+  # Atualizar uma lista
+  update_list_by_id: >
+   UPDATE lists
+    SET name =  $2, 
+        description = $3,
+        category_id = $4,
+        updated_at = CURRENT_TIMESTAMP,
+    WHERE list_id = $1
+    RETURNING *;
+  
+  # Criar uma nova lista
+  insert_list: >
+   INSERT INTO lists (name, description, category_id, created_by, group_id)
+   VALUES ($1, $2, $3, $4, $5);
+
+  #Deletar uma lista
+  delete_list_by_id: >
+   DELETE FROM lists WHERE list_id = $1;
