@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Listas de Compras</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(45deg, #7367f0, #43a047);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 0;
+    }
+    .container {
+      width: 500px;
+      max-width: 90%;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .list-button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      background: #7367f0;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    .list-button:hover {
+      background: #5a52d8;
+    }
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      color: #333;
+    }
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .back-btn {
+      margin-top: 15px;
+      background: #f44336;
+    }
+    .back-btn:hover {
+      background: #e53935;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    .edit-btn {
+      background: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .delete-btn {
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .add-btn {
+      background: #4caf50;
+      color: white;
+      margin-top: 10px;
+    }
+    .add-btn:hover {
+      background: #43a047;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    .cancel-btn {
+      background: #9e9e9e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 15px;
+      cursor: pointer;
+    }
+    .save-btn {
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 15px;
+      cursor: pointer;
+    }
+    .list-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9f9f9;
+      padding: 5px 15px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .list-card-title {
+      flex-grow: 1;
+      font-weight: bold;                                              
+      color: #333;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 400px;
+    }
+    .modal-title {
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app"></div>
+  <div id="modal-container"></div>
+  
+  <script>
+    // Utilize localStorage para persistir os dados
+    let listas = localStorage.getItem('listas') ? 
+      JSON.parse(localStorage.getItem('listas')) : 
+      {
+        1: {
+          nome: "Churrasco",
+          itens: ["Carne", "Carvão", "Cerveja", "Refrigerante", "Pão de alho"]
+        },
+        2: {
+          nome: "Mercado Semanal",
+          itens: ["Arroz", "Feijão", "Frango", "Leite", "Detergente"]
+        },
+        3: {
+          nome: "Farmácia",
+          itens: ["Paracetamol", "Band-aid", "Álcool", "Termômetro", "Vitamina C"]
+        }
+      };
+    
+    // Função para salvar os dados no localStorage
+    function salvarListas() {
+      localStorage.setItem('listas', JSON.stringify(listas));
+    }
+    
+    // Função para gerar um novo ID para lista
+    function gerarNovoId() {
+      const ids = Object.keys(listas).map(id => parseInt(id));
+      return ids.length > 0 ? Math.max(...ids) + 1 : 1;
+    }
+    
+    // Função para mostrar o modal
+    function mostrarModal(conteudo) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="modal">
+          <div class="modal-content">
+            ${conteudo}
+          </div>
+        </div>
+      `;
+    }
+    
+    // Função para fechar o modal
+    function fecharModal() {
+      document.getElementById('modal-container').innerHTML = '';
+    }
+    
+    // Função para renderizar a tela inicial
+    function renderInicio() {
+      const app = document.getElementById("app");
+      const listasBotoes = Object.keys(listas).map(id => {
+        const lista = listas[id];
+        return `
+          <div class="list-card">
+            <span class="list-card-title" onclick="showList(${id})">${lista.nome}</span>
+            <div class="action-buttons">
+              <button class="edit-btn" onclick="editarLista(${id})">Editar</button>
+              <button class="delete-btn" onclick="confirmarExclusaoLista(${id})">Excluir</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+      
+      app.innerHTML = `
+        <h1>Listas de Compras</h1>
+        ${listasBotoes}
+        <button class="list-button add-btn" onclick="criarLista()">Nova Lista</button>
+      `;
+      
+      // Atualiza a URL para a página inicial
+      history.pushState({page: 'inicio'}, 'Listas de Compras', 'index.html');
+    }
+    
+    // Função para mostrar uma lista específica
+    function showList(id) {
+      const lista = listas[id];
+      if (!lista) {
+        // Se a lista não existir, volta para a tela inicial
+        renderInicio();
+        return;
+      }
+      
+      const app = document.getElementById("app");
+      
+      const itensHTML = lista.itens.map((item, index) => `
+        <li class="list-item">
+          <span>${item}</span>
+          <div class="action-buttons">
+            <button class="edit-btn" onclick="editarItem(${id}, ${index})">Editar</button>
+            <button class="delete-btn" onclick="excluirItem(${id}, ${index})">Excluir</button>
+          </div>
+        </li>
+      `).join("");
+      
+      app.innerHTML = `
+        <div class="list-header">
+          <h1>${lista.nome}</h1>
+        </div>
+        <ul>
+          ${itensHTML}
+        </ul>
+        <button class="list-button add-btn" onclick="adicionarItem(${id})">Adicionar Item</button>
+        <button class="list-button back-btn" onclick="renderInicio()">Voltar</button>
+      `;
+      
+      // Atualiza a URL com o ID da lista atual
+      history.pushState({page: 'lista', id: id}, `Lista: ${lista.nome}`, `lista.html?id=${id}`);
+    }
+    
+    // Função para adicionar um novo item à lista
+    function adicionarItem(listaId) {
+      const conteudoModal = `
+        <h2 class="modal-title">Adicionar Item</h2>
+        <div class="form-group">
+          <label for="novo-item">Nome do Item:</label>
+          <input type="text" id="novo-item" placeholder="Digite o nome do item">
+        </div>
+        <div class="form-actions">
+          <button class="cancel-btn" onclick="fecharModal()">Cancelar</button>
+          <button class="save-btn" onclick="salvarNovoItem(${listaId})">Adicionar</button>
+        </div>
+      `;
+      
+      mostrarModal(conteudoModal);
+    }
+    
+    // Função para salvar um novo item na lista
+    function salvarNovoItem(listaId) {
+      const novoItem = document.getElementById('novo-item').value.trim();
+      
+      if (novoItem) {
+        listas[listaId].itens.push(novoItem);
+        salvarListas();
+        fecharModal();
+        showList(listaId);
+      } else {
+        alert("O nome do item não pode estar vazio!");
+      }
+    }
+    
+    // Função para editar um item existente
+    function editarItem(listaId, itemIndex) {
+      const itemAtual = listas[listaId].itens[itemIndex];
+      
+      const conteudoModal = `
+        <h2 class="modal-title">Editar Item</h2>
+        <div class="form-group">
+          <label for="item-editado">Nome do Item:</label>
+          <input type="text" id="item-editado" value="${itemAtual}">
+        </div>
+        <div class="form-actions">
+          <button class="cancel-btn" onclick="fecharModal()">Cancelar</button>
+          <button class="save-btn" onclick="salvarItemEditado(${listaId}, ${itemIndex})">Salvar</button>
+        </div>
+      `;
+      
+      mostrarModal(conteudoModal);
+    }
+    
+    // Função para salvar um item editado
+    function salvarItemEditado(listaId, itemIndex) {
+      const itemEditado = document.getElementById('item-editado').value.trim();
+      
+      if (itemEditado) {
+        listas[listaId].itens[itemIndex] = itemEditado;
+        salvarListas();
+        fecharModal();
+        showList(listaId);
+      } else {
+        alert("O nome do item não pode estar vazio!");
+      }
+    }
+    
+    // Função para excluir um item
+    function excluirItem(listaId, itemIndex) {
+      if (confirm("Tem certeza que deseja excluir este item?")) {
+        listas[listaId].itens.splice(itemIndex, 1);
+        salvarListas();
+        showList(listaId);
+      }
+    }
+    
+    // Função para criar uma nova lista
+    function criarLista() {
+      const conteudoModal = `
+        <h2 class="modal-title">Nova Lista</h2>
+        <div class="form-group">
+          <label for="nova-lista-nome">Nome da Lista:</label>
+          <input type="text" id="nova-lista-nome" placeholder="Digite o nome da lista">
+        </div>
+        <div class="form-actions">
+          <button class="cancel-btn" onclick="fecharModal()">Cancelar</button>
+          <button class="save-btn" onclick="salvarNovaLista()">Criar</button>
+        </div>
+      `;
+      
+      mostrarModal(conteudoModal);
+    }
+    
+    // Função para salvar uma nova lista
+    function salvarNovaLista() {
+      const nomeLista = document.getElementById('nova-lista-nome').value.trim();
+      
+      if (nomeLista) {
+        const novoId = gerarNovoId();
+        listas[novoId] = {
+          nome: nomeLista,
+          itens: []
+        };
+        
+        salvarListas();
+        fecharModal();
+        renderInicio();
+      } else {
+        alert("O nome da lista não pode estar vazio!");
+      }
+    }
+    
+    // Função para editar uma lista existente
+    function editarLista(listaId) {
+      const listaAtual = listas[listaId];
+      
+      const conteudoModal = `
+        <h2 class="modal-title">Editar Lista</h2>
+        <div class="form-group">
+          <label for="lista-editada-nome">Nome da Lista:</label>
+          <input type="text" id="lista-editada-nome" value="${listaAtual.nome}">
+        </div>
+        <div class="form-actions">
+          <button class="cancel-btn" onclick="fecharModal()">Cancelar</button>
+          <button class="save-btn" onclick="salvarListaEditada(${listaId})">Salvar</button>
+        </div>
+      `;
+      
+      mostrarModal(conteudoModal);
+    }
+    
+    // Função para salvar uma lista editada
+    function salvarListaEditada(listaId) {
+      const nomeEditado = document.getElementById('lista-editada-nome').value.trim();
+      
+      if (nomeEditado) {
+        listas[listaId].nome = nomeEditado;
+        salvarListas();
+        fecharModal();
+        renderInicio();
+      } else {
+        alert("O nome da lista não pode estar vazio!");
+      }
+    }
+    
+    // Função para confirmar exclusão de uma lista
+    function confirmarExclusaoLista(listaId) {
+      if (confirm(`Tem certeza que deseja excluir a lista "${listas[listaId].nome}"?`)) {
+        delete listas[listaId];
+        salvarListas();
+        renderInicio();
+      }
+    }
+    
+    // Função para obter o ID da lista da URL
+    function getListIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      // Verifica tanto "listid" (original) quanto "id" (novo formato)
+      return params.get("listid") || params.get("id");
+    }
+    
+    // Configura o evento de navegação para suportar o botão voltar
+    window.addEventListener('popstate', function(event) {
+      if (event.state && event.state.page === 'lista' && event.state.id) {
+        showList(event.state.id);
+      } else {
+        renderInicio();
+      }
+    });
+    
+    // Inicializa a tela
+    function inicializarApp() {
+      const listId = getListIdFromUrl();
+      if (listId && listas[listId]) {
+        showList(listId);
+      } else {
+        renderInicio();
+      }
+    }
+    
+    // Inicia o aplicativo quando a página carregar
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', inicializarApp);
+    } else {
+      inicializarApp();
+    }
+  </script>
+</body>
+</html>
