@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnotaÍ - Lista de Compras</title>
+    <style>
+        /* CSS Básico */
+        :root {
+            --primary-color: #3F51B5;
+            --accent-color: #303F9F;
+            --light-color: #E8EAF6;
+            --text-color: #212121;
+            --danger-color: #F44336;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f9f9f9;
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        main {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 15px;
+        }
+
+        .sidebar, .list-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .btn-edit {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .btn-delete {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: #757575;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">📝 AnotaÍ</div>
+                <div class="user-info">
+                    <span>Olá, Arthur</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="sidebar">
+                <div class="group-info">
+                    <h2>Informações do Grupo</h2>
+                    <p id="group-name">Família Silva</p>
+                </div>
+
+                <div class="list-info">
+                    <h2>Listas do Grupo</h2>
+                    <div id="lists-container">
+                        <p>Supermercado - Maio 2025</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="list-container">
+                <div class="list-header">
+                    <h1 id="current-list-name">Supermercado - Maio 2025</h1>
+                    <div>
+                        <button class="btn btn-edit">Editar</button>
+                    </div>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Pesquisar itens...">
+                    <button id="search-btn">Buscar</button>
+                </div>
+
+                <div class="add-item">
+                    <input type="text" id="item-name" placeholder="Nome do item">
+                    <select id="item-category">
+                        <option value="">Categoria</option>
+                        <option value="frutas">Frutas</option>
+                        <option value="laticínios">Laticínios</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                    <input type="number" id="item-quantity" min="1" value="1" placeholder="Qtd">
+                    <input type="number" step="0.01" id="item-price" placeholder="Preço R$">
+                    <button id="add-item-btn">Adicionar</button>
+                </div>
+
+                <div class="items-container" id="items-list">
+                    <!-- Itens serão carregados dinamicamente pelo JavaScript -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Dados simplificados
+        const mockData = {
+            items: [
+                { id: 1, name: "Maçãs", category: "frutas", quantity: 6, price: 3.99, completed: false },
+                { id: 2, name: "Leite", category: "laticínios", quantity: 2, price: 4.50, completed: true },
+                { id: 3, name: "Pão", category: "outros", quantity: 10, price: 0.75, completed: false }
+            ]
+        };
+
+        // Estado mínimo
+        let state = {
+            items: mockData.items,
+            filteredItems: mockData.items
+        };
+
+        // Elementos do DOM
+        const itemsListElement = document.getElementById('items-list');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const addItemBtn = document.getElementById('add-item-btn');
+        const itemNameInput = document.getElementById('item-name');
+        const itemCategorySelect = document.getElementById('item-category');
+        const itemQuantityInput = document.getElementById('item-quantity');
+        const itemPriceInput = document.getElementById('item-price');
+
+        // Inicializar a aplicação
+        function init() {
+            renderItems();
+        }
+
+        // Renderizar itens na lista
+        function renderItems() {
+            itemsListElement.innerHTML = '';
+            
+            if (state.filteredItems.length === 0) {
+                itemsListElement.innerHTML = '<p>Nenhum item encontrado.</p>';
+                return;
+            }
+            
+            state.filteredItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'item';
+                itemElement.dataset.id = item.id;
+                
+                itemElement.innerHTML = `
+                    <div class="item-info">
+                        <input type="checkbox" class="item-checkbox" ${item.completed ? 'checked' : ''}>
+                        <span class="item-name ${item.completed ? 'completed' : ''}">${item.name}</span>
+                        <span class="item-category">(${item.category})</span>
+                    </div>
+                    <div class="item-actions">
+                        <span>R$ ${item.price.toFixed(2)} x ${item.quantity}</span>
+                        <button class="btn btn-delete">Excluir</button>
+                    </div>
+                `;
+                
+                itemsListElement.appendChild(itemElement);
+                
+                // Adicionar evento de checkbox
+                const checkbox = itemElement.querySelector('.item-checkbox');
+                checkbox.addEventListener('change', () => {
+                    toggleItemCompleted(item.id);
+                });
+                
+                // Adicionar evento de exclusão
+                const deleteBtn = itemElement.querySelector('.btn-delete');
+                deleteBtn.addEventListener('click', () => {
+                    deleteItem(item.id);
+                });
+            });
+        }
+
+        // Alternar item como completo/incompleto
+        function toggleItemCompleted(itemId) {
+            const itemIndex = state.items.findIndex(item => item.id === itemId);
+            if (itemIndex !== -1) {
+                state.items[itemIndex].completed = !state.items[itemIndex].completed;
+                renderItems();
+            }
+        }
+
+        // Excluir um item
+        function deleteItem(itemId) {
+            if (confirm('Tem certeza que deseja excluir este item?')) {
+                state.items = state.items.filter(item => item.id !== itemId);
+                state.filteredItems = state.items;
+                renderItems();
+            }
+        }
+
+        // Adicionar item
+        function addItem() {
+            const name = itemNameInput.value.trim();
+            const category = itemCategorySelect.value;
+            const quantity = parseInt(itemQuantityInput.value);
+            const price = parseFloat(itemPriceInput.value) || 0;
+            
+            if (!name) {
+                alert('Por favor, informe o nome do item.');
+                return;
+            }
+            
+            // Adicionar novo item
+            const newItem = {
+                id: state.items.length > 0 ? Math.max(...state.items.map(item => item.id)) + 1 : 1,
+                name,
+                category,
+                quantity,
+                price,
+                completed: false
+            };
+            
+            state.items.push(newItem);
+            state.filteredItems = state.items;
+            
+            // Limpar campos
+            itemNameInput.value = '';
+            itemCategorySelect.value = '';
+            itemQuantityInput.value = '1';
+            itemPriceInput.value = '';
+            
+            renderItems();
+        }
+
+        // Pesquisar itens
+        function searchItems() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (searchTerm) {
+                state.filteredItems = state.items.filter(item => 
+                    item.name.toLowerCase().includes(searchTerm) || 
+                    item.category.toLowerCase().includes(searchTerm)
+                );
+            } else {
+                state.filteredItems = state.items;
+            }
+            
+            renderItems();
+        }
+
+        // Event Listeners
+        searchBtn.addEventListener('click', searchItems);
+        searchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                searchItems();
+            }
+        });
+        
+        addItemBtn.addEventListener('click', addItem);
+
+        // Iniciar a aplicação
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
